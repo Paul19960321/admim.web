@@ -1,0 +1,27 @@
+stages:
+  - deploy
+
+develop:
+  stage: deploy
+  only:
+    - develop
+  tags:
+    - '106'
+  script:
+    - docker run --rm -v $(pwd):/app -w /app node:10.21.0 npm install chromedriver --chromedriver_cdnurl=http://cdn.npm.taobao.org/dist/chromedriver
+    - docker run --rm -v $(pwd):/app -w /app node:10.21.0 npm run build --qa
+    - cp -r ./dist/. /usr/share/nginx/WinkSign/dist
+    - curl 'https://oapi.dingtalk.com/robot/send?access_token=bcfab58d12d412ef89992f46f3fc112f237cfdf417169cc0307b59850939fa8c' -H 'Content-Type:application/json' -d '{"msgtype":"text","text":'{"content":"'$GITLAB_USER_NAME ：PC前端（测试） $CI_COMMIT_MESSAGE'"}'}'
+
+prod:
+  stage: deploy
+  only:
+    - master
+  tags:
+    - prod
+  script:
+    - docker run --rm -v $(pwd):/app -w /app node:10.21.0 npm install chromedriver --chromedriver_cdnurl=http://cdn.npm.taobao.org/dist/chromedriver
+    - docker run --rm -v $(pwd):/app -w /app node:10.21.0 npm run build --prod
+    - cp -r ./dist/. /usr/share/nginx/WinkSign/dist
+    - curl 'https://oapi.dingtalk.com/robot/send?access_token=bcfab58d12d412ef89992f46f3fc112f237cfdf417169cc0307b59850939fa8c' -H 'Content-Type:application/json' -d '{"msgtype":"text","text":'{"content":"'$GITLAB_USER_NAME ：PC前端（生产） $CI_COMMIT_MESSAGE'"}'}'
+
